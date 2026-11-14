@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Floor plan</title>
+  <title>Floor plan design</title>
 </head>
 <body>
   <header>
-    <h1>Floor plan</h1>
-    <span class="muted">All dimensions in cm &middot; areas in m&sup2; &middot; interior (clear) sizes</span>
+    <h1>Floor plan design</h1>
+    <span class="muted">All dimensions in cm &middot; areas in m&sup2; &middot; inside (clear) sizes</span>
     <button id="print" type="button">Print / PDF</button>
   </header>
 
@@ -32,32 +32,32 @@
       </section>
 
       <section class="card editor">
-        <h2>Edit dimensions, doors and windows</h2>
-        <textarea id="cfg" spellcheck="false" aria-label="Plan configuration (JSON)"></textarea>
+        <h2>Edit your plan</h2>
+        <label class="title-field">Plan name
+          <input id="plan-title" type="text" placeholder="e.g. My apartment">
+        </label>
+
+        <div id="editor"></div>
+
         <div class="row">
-          <button id="copy" type="button">Copy JSON</button>
-          <button id="reset" type="button">Reset to defaults</button>
+          <button id="save-file" type="button">Save plan to file</button>
+          <button id="open-file" type="button">Open plan file</button>
+          <input id="file-input" type="file" accept=".json,application/json" hidden>
+          <button id="reset" type="button">Start over with example</button>
           <span id="status"></span>
         </div>
         <p class="muted small">
-          The plan redraws as you type and is auto-saved in this browser.
-          To make your edits permanent, click <b>Copy JSON</b> and paste it into
-          <code>src/config/default-plan.json</code>.
+          Changes are drawn instantly and kept in this browser. Use <b>Save plan to file</b> for a backup
+          or to move the plan to another computer.
         </p>
         <details>
-          <summary>How the config works</summary>
+          <summary>Tips</summary>
           <ul>
-            <li><b>wall</b>: thickness between rooms (cm). Gaps between rooms are drawn as wall.</li>
-            <li><b>rooms</b>: <code>x, y</code> = top-left interior corner, <code>w</code> = width (left&ndash;right),
-                <code>h</code> = depth (top&ndash;bottom). Move a room by changing x/y. Set <code>"outdoor": true</code> for terraces.
-                Give several rooms the same <code>"group"</code> text to make them one room (e.g. an L-shape); their areas are added together.
-                An opening with <code>"swing": "none"</code> removes part of the wall between them &ndash; the rest stays as a short wall.</li>
-            <li><b>doors</b>: <code>room</code> = id of the room it belongs to, <code>wall</code> = N / E / S / W,
-                <code>offset</code> = distance from the wall's start (N/S walls: from the left corner; E/W walls: from the top corner) to the start of the opening,
-                <code>width</code> = opening width, <code>swing</code> = "in" (opens into that room), "out" (opens away from it) or "none" (open passage),
-                <code>hinge</code> = "start" or "end" (which end of the opening the hinges are on).</li>
-            <li><b>windows</b>: same as doors but without swing/hinge.</li>
-            <li>N is the top of the drawing, E right, S bottom, W left.</li>
+            <li>The drawing is seen from above: <b>Top</b> is the top of the screen, <b>Left</b> the left.</li>
+            <li><b>Starts at</b> is the distance from the wall's left corner (top and bottom walls) or top corner (left and right walls) to where the door or window begins.</li>
+            <li>To make one room out of two rectangles (e.g. an L-shape), type the same name in <b>Same room as</b> for both. Their areas are added together.</li>
+            <li>A door set to <b>Open passage</b> cuts a gap in the wall. Make it nearly as long as the wall to leave only a short stub.</li>
+            <li>An orange warning under the plan means rooms overlap or a door or window is longer than its wall.</li>
           </ul>
         </details>
       </section>

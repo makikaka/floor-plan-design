@@ -1,6 +1,6 @@
-# plan-floor-design
+# Floor plan design
 
-An editable, to-scale floor plan. Describe rooms, doors and windows in a small JSON file and the app draws the plan, shows door swings and calculates the m² of every room and the total.
+An editable, to-scale floor plan. Fill in rooms, doors and windows in simple forms and the app draws the plan, shows door swings and calculates the m² of every room and the total.
 
 ## Run it
 
@@ -21,21 +21,20 @@ Requires Node 20 or newer.
 
 ## Editing the plan
 
-Use the text box in the app: the drawing and the m² table update as you type, and your edits are kept in the browser. To make them permanent, click **Copy JSON** and paste the result into [`src/config/default-plan.json`](src/config/default-plan.json).
+Everything is edited in the page, no code or JSON needed. The drawing and the m² table update as you type, and your changes are kept in the browser.
 
-All sizes are interior (clear) sizes in centimetres. `x` grows to the right, `y` grows downward.
+- **Rooms**: name, width and depth (inside measurements, cm), and where the room sits (`Left` / `Top`). Leave a 10 cm gap between neighbouring rooms for the wall. Tick **Outdoor** for terraces and balconies.
+- **Same room as**: give two rectangles the same text to make them one room (for example an L-shape). Their areas are added together.
+- **Doors**: pick the room and wall, how far from the corner the door starts, its width, where it opens (into the room, out of it, or an open passage with no door) and which side the hinges are on.
+- **Windows**: room, wall, start and width.
+- **Save plan to file / Open plan file**: back up a plan or move it to another computer.
+- **Start over with example**: loads the example plan.
 
-| Key | Meaning |
-|---|---|
-| `wall` | Wall thickness (cm). The gap between two rooms is drawn as wall. |
-| `rooms[]` | `id`, `name`, `x`, `y` (top-left interior corner), `w` (width), `h` (depth). Optional: `outdoor: true` for terraces, `group`, `note`. |
-| `rooms[].group` | Rooms with the same `group` are one room made of several rectangles (e.g. an L-shape). Their areas are added together. |
-| `doors[]` | `room`, `wall` (`N`/`E`/`S`/`W`), `offset`, `width`, `swing` (`in`, `out`, `none`), `hinge` (`start`, `end`), optional `label`. |
-| `windows[]` | `room`, `wall`, `offset`, `width`. |
+The app warns you if rooms overlap or a door or window is longer than its wall.
 
-- `offset` is the distance from the start of the wall (left corner for `N`/`S`, top corner for `E`/`W`) to the start of the opening.
-- `swing: "in"` opens into the room the door belongs to, `"out"` away from it, `"none"` is an open passage. Use a wide `none` opening to leave only a short stub of wall between two rooms.
-- The app warns you if rooms overlap or an opening is longer than its wall.
+### Changing the example plan shipped with the app
+
+The example plan is [`src/config/default-plan.json`](src/config/default-plan.json). Save your plan to a file in the app and copy its contents over that file to make it the new example.
 
 ## Project layout
 
@@ -44,13 +43,15 @@ index.html                 page shell
 src/
   main.js                  wires the editor, validation and rendering together
   styles.css
-  config/default-plan.json the plan itself
+  config/default-plan.json the example plan
   lib/
     geometry.js            walls, openings, door swing arcs, bounds (pure)
     areas.js               m² per room, grouping, totals (pure)
     validate.js            defaults, structure errors, layout warnings (pure)
+    plan-model.js          add / remove rooms, doors, windows; option labels (pure)
     storage.js             browser localStorage helpers
   ui/
+    editor.js              form-based editor (tables of rooms, doors, windows)
     render-plan.js         SVG drawing
     render-table.js        areas table and warnings
 tests/                     unit tests for lib/

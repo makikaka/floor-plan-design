@@ -1,4 +1,4 @@
-const KEY = "plan-floor-design:config:v1";
+const KEY = "floor-plan-design:plan:v1";
 
 export const loadSaved = () => {
   try { return localStorage.getItem(KEY); } catch { return null; }

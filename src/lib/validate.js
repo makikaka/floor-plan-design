@@ -8,7 +8,7 @@ const HINGES = ["start", "end"];
  */
 export function normalize(raw) {
   return {
-    title: "Floor plan",
+    title: "Floor plan design",
     wall: 10,
     doors: [],
     windows: [],

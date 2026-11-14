@@ -1,5 +1,5 @@
 {
-  "name": "plan-floor-design",
+  "name": "floor-plan-design",
   "version": "1.0.0",
   "description": "Editable, to-scale floor plan with automatic m² totals, door swings and windows.",
   "private": true,
