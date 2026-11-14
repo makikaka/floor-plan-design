@@ -32,14 +32,16 @@ Plans you edit in the browser are stored in that browser only. Use **Save plan t
 
 ## Editing the plan
 
-Everything is edited in the page, no code or JSON needed. The drawing and the m² table update as you type, and your changes are kept in the browser.
+Everything is edited in the page, no code or JSON needed. The drawing and the m² totals update as you type, and your changes are kept in the browser.
 
-- **Rooms**: name, width and depth (inside measurements, cm), and where the room sits (`Left` / `Top`). Leave a 10 cm gap between neighbouring rooms for the wall. Tick **Outdoor** for terraces and balconies.
+- **Side panel** with tabs for **Rooms**, **Doors**, **Windows** and **Areas**. Each room, door and window is a card with labelled fields.
+- **Rooms**: name, width and depth (inside measurements, cm) and where the room sits (`Left` / `Top`). Leave a 10 cm gap between neighbouring rooms for the wall. Tick **Outdoor** for terraces and balconies.
 - **Same room as**: give two rectangles the same text to make them one room (for example an L-shape). Their areas are added together.
-- **Doors**: pick the room and wall, how far from the corner the door starts, its width, where it opens (into the room, out of it, or an open passage with no door) and which side the hinges are on.
+- **Doors**: pick the room and wall, how far from the corner the door starts, its width, where it opens (into the room, out of it, or an open passage) and which side the hinges are on.
 - **Windows**: room, wall, start and width.
-- **Save plan to file / Open plan file**: back up a plan or move it to another computer.
-- **Start over with example**: loads the example plan.
+- **On the plan**: drag to move, scroll or use the buttons to zoom, double-click to fit. Click a room to edit it. Hovering a card highlights that room, door or window on the plan.
+- **Full screen** button (or press `F`) and a button (or `P`) to hide the side panel and give the plan the whole screen.
+- **Save / Open**: back up a plan to a file or move it to another computer. **Example** loads the sample plan. **Print** gives a plan plus an areas table.
 
 The app warns you if rooms overlap or a door or window is longer than its wall.
 
@@ -62,8 +64,10 @@ src/
     plan-model.js          add / remove rooms, doors, windows; option labels (pure)
     storage.js             browser localStorage helpers
   ui/
-    editor.js              form-based editor (tables of rooms, doors, windows)
+    editor.js              card-based form editor for rooms, doors, windows
+    viewport.js            pan and zoom of the plan
     render-plan.js         SVG drawing
-    render-table.js        areas table and warnings
+    render-table.js        areas table, totals chips, warnings
+    icons.js               small inline icons
 tests/                     unit tests for lib/
 ```

@@ -3,15 +3,17 @@ import {
   SWING_OPTIONS, WALL_OPTIONS, distanceFrom, hingeOptions,
   newDoor, newRoom, newWindow, openingsOf, removeRoom,
 } from "../lib/plan-model.js";
+import { icons } from "./icons.js";
 
-/** Tiny DOM helper: h("input", { type: "number" }, child1, child2). */
+/** Tiny DOM helper: h("div", { class: "x" }, child1, child2). */
 function h(tag, props = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
     if (k === "class") node.className = v;
     else if (k === "text") node.textContent = v;
+    else if (k === "html") node.innerHTML = v;
     else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
-    else if (v !== undefined && v !== null) node.setAttribute(k, v);
+    else if (v !== undefined && v !== null && v !== false) node.setAttribute(k, v === true ? "" : v);
   }
   children.flat().forEach((c) => c != null && node.append(c));
   return node;
@@ -22,33 +24,47 @@ function fillSelect(select, options, value) {
   select.value = value;
 }
 
+function field(labelText, control, hint) {
+  return h("label", { class: "field" },
+    h("span", { class: "field-label", text: labelText }),
+    control,
+    hint ?? null,
+  );
+}
+
 /**
- * Builds the form-based editor (tables of rooms, doors and windows).
- * `getPlan()` returns the current plan object, `onChange()` is called after any edit.
- * Returns `{ rebuild }` – call it after the whole plan has been replaced (open file / reset).
+ * Builds the form editor: one card per room, door and window.
+ *
+ * containers : { rooms, doors, windows } – elements to fill
+ * getPlan()  : returns the current plan object (edited in place)
+ * onChange() : called after every edit
+ * onHover(t) : called with { type: "room"|"door"|"window", id|index } or null
+ *
+ * Returns { rebuild, focusRoom }.
  */
-export function mountEditor(root, { getPlan, onChange }) {
+export function mountEditor(containers, { getPlan, onChange, onHover = () => {} }) {
   const roomOptions = () => getPlan().rooms.map((r) => ({ value: r.id, label: r.name || "(unnamed)" }));
 
   function refreshRoomSelects() {
-    root.querySelectorAll("select[data-room-select]").forEach((sel) => {
-      const keep = sel.value;
-      fillSelect(sel, roomOptions(), keep);
+    document.querySelectorAll("select[data-room-select]").forEach((sel) => {
+      fillSelect(sel, roomOptions(), sel.value);
     });
   }
 
-  function numberField(obj, key, { min, onInput, width = "5.5em" } = {}) {
-    const input = h("input", { type: "number", step: "1", min, value: obj[key], style: `width:${width}` });
+  // ---------- inputs ----------
+  function numberInput(obj, key, { min, onInput } = {}) {
+    const input = h("input", { type: "number", inputmode: "decimal", step: "1", min, value: obj[key] });
     input.addEventListener("input", () => {
       obj[key] = input.valueAsNumber;
       onInput?.();
       onChange();
     });
+    input.addEventListener("focus", () => input.select());
     return input;
   }
 
-  function textField(obj, key, { placeholder, onInput, width = "9em" } = {}) {
-    const input = h("input", { type: "text", value: obj[key] ?? "", placeholder, style: `width:${width}` });
+  function textInput(obj, key, { placeholder, onInput, cls } = {}) {
+    const input = h("input", { type: "text", class: cls, value: obj[key] ?? "", placeholder, spellcheck: "false" });
     input.addEventListener("input", () => {
       if (input.value === "") delete obj[key];
       else obj[key] = input.value;
@@ -58,7 +74,7 @@ export function mountEditor(root, { getPlan, onChange }) {
     return input;
   }
 
-  function selectField(obj, key, options, { onInput, isRoom = false } = {}) {
+  function selectInput(obj, key, options, { onInput, isRoom = false } = {}) {
     const select = h("select", isRoom ? { "data-room-select": "" } : {});
     fillSelect(select, options, obj[key]);
     select.addEventListener("change", () => {
@@ -69,156 +85,144 @@ export function mountEditor(root, { getPlan, onChange }) {
     return select;
   }
 
-  const deleteButton = (onClick) => h("button", { type: "button", class: "icon", title: "Remove", "aria-label": "Remove", text: "✕", onclick: onClick });
+  const deleteButton = (onClick) =>
+    h("button", { type: "button", class: "icon-btn danger", title: "Remove", "aria-label": "Remove", html: icons.trash, onclick: onClick });
 
-  // ---------- Rooms ----------
-  function roomsSection() {
-    const tbody = h("tbody");
+  const hoverable = (card, target) => {
+    card.addEventListener("pointerenter", () => onHover(target));
+    card.addEventListener("pointerleave", () => onHover(null));
+    card.addEventListener("focusin", () => onHover(target));
+    card.addEventListener("focusout", () => onHover(null));
+    return card;
+  };
 
-    const addRow = (room) => {
-      const area = h("span", { class: "area" });
-      const updateArea = () => {
-        area.textContent = Number.isFinite(room.w * room.h) ? formatM2(cm2ToM2(room.w, room.h)) : "–";
-      };
-      updateArea();
+  const addButton = (text, onClick, disabled = false) =>
+    h("button", { type: "button", class: "add-btn", html: `${icons.plus}<span>${text}</span>`, onclick: onClick, disabled });
 
-      const tr = h("tr", {},
-        h("td", {}, textField(room, "name", { width: "10em", onInput: refreshRoomSelects })),
-        h("td", {}, numberField(room, "w", { min: 1, onInput: updateArea })),
-        h("td", {}, numberField(room, "h", { min: 1, onInput: updateArea })),
-        h("td", {}, numberField(room, "x")),
-        h("td", {}, numberField(room, "y")),
-        h("td", {}, textField(room, "group", { placeholder: "optional", width: "12em" })),
-        h("td", { class: "center" }, (() => {
-          const box = h("input", { type: "checkbox" });
-          box.checked = !!room.outdoor;
-          box.addEventListener("change", () => {
-            if (box.checked) room.outdoor = true; else delete room.outdoor;
-            onChange();
-          });
-          return box;
-        })()),
-        h("td", { class: "num" }, area),
-        h("td", {}, deleteButton(() => {
+  const emptyNote = (text) => h("p", { class: "empty", text });
+
+  // ---------- rooms ----------
+  function roomCard(room) {
+    const area = h("span", { class: "badge" });
+    const updateArea = () => {
+      area.textContent = Number.isFinite(room.w * room.h) ? `${formatM2(cm2ToM2(room.w, room.h))} m²` : "–";
+    };
+    updateArea();
+
+    const outdoor = h("input", { type: "checkbox" });
+    outdoor.checked = !!room.outdoor;
+    outdoor.addEventListener("change", () => {
+      if (outdoor.checked) room.outdoor = true; else delete room.outdoor;
+      onChange();
+    });
+
+    const card = h("article", { class: "item", "data-room-card": room.id },
+      h("header", { class: "item-head" },
+        textInput(room, "name", { cls: "name-input", placeholder: "Room name", onInput: refreshRoomSelects }),
+        area,
+        deleteButton(() => {
           const plan = getPlan();
           const used = openingsOf(plan, room.id);
           if (used && !window.confirm(`"${room.name}" has ${used} door(s)/window(s). Remove them too?`)) return;
           removeRoom(plan, room.id);
+          onHover(null);
           rebuild();
           onChange();
-        })),
-      );
-      tbody.append(tr);
+        }),
+      ),
+      h("div", { class: "fields cols-2" },
+        field("Width (cm)", numberInput(room, "w", { min: 1, onInput: updateArea })),
+        field("Depth (cm)", numberInput(room, "h", { min: 1, onInput: updateArea })),
+      ),
+      h("div", { class: "fields cols-2" },
+        field("Left (cm)", numberInput(room, "x")),
+        field("Top (cm)", numberInput(room, "y")),
+      ),
+      h("div", { class: "fields cols-2 bottom" },
+        field("Same room as", textInput(room, "group", { placeholder: "optional" }),
+          h("span", { class: "field-hint", text: "Same text = one room" })),
+        h("label", { class: "check" }, outdoor, h("span", { text: "Outdoor (balcony, terrace)" })),
+      ),
+    );
+    return hoverable(card, { type: "room", id: room.id });
+  }
+
+  function buildRooms() {
+    const plan = getPlan();
+    containers.rooms.replaceChildren(
+      ...plan.rooms.map(roomCard),
+      addButton("Add room", () => { const p = getPlan(); p.rooms.push(newRoom(p)); rebuild(); onChange(); focusRoom(p.rooms.at(-1).id); }),
+    );
+  }
+
+  // ---------- doors & windows ----------
+  function openingCard(kind, o, index, { isDoor }) {
+    const from = h("span", { class: "field-hint" });
+    const hingeSelect = isDoor ? h("select") : null;
+
+    const sync = () => {
+      from.textContent = `from the ${distanceFrom(o.wall)}`;
+      if (hingeSelect) fillSelect(hingeSelect, hingeOptions(o.wall), o.hinge === "end" ? "end" : "start");
     };
+    hingeSelect?.addEventListener("change", () => { o.hinge = hingeSelect.value; onChange(); });
 
-    getPlan().rooms.forEach(addRow);
-
-    return section(
-      "Rooms",
-      "Width and depth are the inside measurements. “Left / top” place the room on the drawing: leave a 10 cm gap between neighbouring rooms for the wall.",
-      h("table", { class: "grid" },
-        h("thead", {}, h("tr", {},
-          h("th", { text: "Name" }), h("th", { text: "Width (cm)" }), h("th", { text: "Depth (cm)" }),
-          h("th", { text: "Left (cm)" }), h("th", { text: "Top (cm)" }),
-          h("th", { text: "Same room as", title: "Rooms with the same text here count as one room (e.g. an L-shape)" }),
-          h("th", { text: "Outdoor" }), h("th", { text: "m²" }), h("th"))),
-        tbody),
-      h("button", {
-        type: "button", text: "+ Add room",
-        onclick: () => { const p = getPlan(); p.rooms.push(newRoom(p)); rebuild(); onChange(); },
-      }),
+    const card = h("article", { class: "item" },
+      h("header", { class: "item-head" },
+        selectInput(o, "room", roomOptions(), { isRoom: true }),
+        deleteButton(() => {
+          const plan = getPlan();
+          plan[kind] = plan[kind].filter((x) => x !== o);
+          onHover(null);
+          rebuild();
+          onChange();
+        }),
+      ),
+      h("div", { class: "fields cols-3" },
+        field("Wall", selectInput(o, "wall", WALL_OPTIONS, { onInput: sync })),
+        field("Starts at (cm)", numberInput(o, "offset", { min: 0 }), from),
+        field("Width (cm)", numberInput(o, "width", { min: 1 })),
+      ),
+      isDoor
+        ? h("div", { class: "fields cols-2" },
+          field("Opens", selectInput(o, "swing", SWING_OPTIONS)),
+          field("Hinges on", hingeSelect),
+        )
+        : null,
+      isDoor
+        ? h("div", { class: "fields" }, field("Label on plan", textInput(o, "label", { placeholder: "optional, e.g. Entrance" })))
+        : null,
     );
+    sync();
+    return hoverable(card, { type: isDoor ? "door" : "window", index });
   }
 
-  // ---------- Doors & windows ----------
-  function openingRows(kind, list, { withDoorFields }) {
-    const tbody = h("tbody");
-
-    list.forEach((o) => {
-      const from = h("span", { class: "from" });
-      const hingeSelect = withDoorFields ? h("select") : null;
-
-      const sync = () => {
-        from.textContent = `from ${distanceFrom(o.wall)}`;
-        if (hingeSelect) fillSelect(hingeSelect, hingeOptions(o.wall), o.hinge === "end" ? "end" : "start");
-      };
-
-      if (hingeSelect) {
-        hingeSelect.addEventListener("change", () => { o.hinge = hingeSelect.value; onChange(); });
-      }
-
-      const cells = [
-        h("td", {}, selectField(o, "room", roomOptions(), { isRoom: true })),
-        h("td", {}, selectField(o, "wall", WALL_OPTIONS, { onInput: sync })),
-        h("td", { class: "nowrap" }, numberField(o, "offset", { min: 0 }), " ", from),
-        h("td", {}, numberField(o, "width", { min: 1 })),
-      ];
-      if (withDoorFields) {
-        cells.push(
-          h("td", {}, selectField(o, "swing", SWING_OPTIONS)),
-          h("td", {}, hingeSelect),
-          h("td", {}, textField(o, "label", { placeholder: "optional", width: "8em" })),
-        );
-      }
-      cells.push(h("td", {}, deleteButton(() => {
-        const plan = getPlan();
-        plan[kind] = plan[kind].filter((x) => x !== o);
-        rebuild();
-        onChange();
-      })));
-
-      sync();
-      tbody.append(h("tr", {}, ...cells));
-    });
-    return tbody;
-  }
-
-  function doorsSection() {
+  function buildOpenings(kind, container, { isDoor, addLabel, make, emptyText }) {
     const plan = getPlan();
-    return section(
-      "Doors",
-      "Pick the room and the wall the door is in, then how far from the corner the door starts. Choose where it opens and which side the hinges are on.",
-      h("table", { class: "grid" },
-        h("thead", {}, h("tr", {},
-          h("th", { text: "Room" }), h("th", { text: "Wall" }), h("th", { text: "Starts at (cm)" }), h("th", { text: "Width (cm)" }),
-          h("th", { text: "Opens" }), h("th", { text: "Hinges on" }), h("th", { text: "Label" }), h("th"))),
-        openingRows("doors", plan.doors, { withDoorFields: true })),
-      h("button", {
-        type: "button", text: "+ Add door", disabled: plan.rooms.length ? null : "",
-        onclick: () => { const p = getPlan(); p.doors.push(newDoor(p)); rebuild(); onChange(); },
-      }),
+    const list = plan[kind];
+    container.replaceChildren(
+      ...(list.length ? list.map((o, i) => openingCard(kind, o, i, { isDoor })) : [emptyNote(emptyText)]),
+      addButton(addLabel, () => { const p = getPlan(); p[kind].push(make(p)); rebuild(); onChange(); }, plan.rooms.length === 0),
     );
   }
 
-  function windowsSection() {
-    const plan = getPlan();
-    return section(
-      "Windows",
-      null,
-      h("table", { class: "grid" },
-        h("thead", {}, h("tr", {},
-          h("th", { text: "Room" }), h("th", { text: "Wall" }), h("th", { text: "Starts at (cm)" }), h("th", { text: "Width (cm)" }), h("th"))),
-        openingRows("windows", plan.windows, { withDoorFields: false })),
-      h("button", {
-        type: "button", text: "+ Add window", disabled: plan.rooms.length ? null : "",
-        onclick: () => { const p = getPlan(); p.windows.push(newWindow(p)); rebuild(); onChange(); },
-      }),
-    );
-  }
-
-  function section(title, hint, table, addButton) {
-    return h("div", { class: "section" },
-      h("h3", { text: title }),
-      hint ? h("p", { class: "muted small", text: hint }) : null,
-      h("div", { class: "scroll" }, table),
-      addButton,
-    );
-  }
-
+  // ---------- public ----------
   function rebuild() {
-    root.replaceChildren(roomsSection(), doorsSection(), windowsSection());
+    buildRooms();
+    buildOpenings("doors", containers.doors, { isDoor: true, addLabel: "Add door", make: newDoor, emptyText: "No doors yet." });
+    buildOpenings("windows", containers.windows, { isDoor: false, addLabel: "Add window", make: newWindow, emptyText: "No windows yet." });
+  }
+
+  /** Scrolls to a room's card, flashes it and focuses its name. */
+  function focusRoom(id) {
+    const card = containers.rooms.querySelector(`[data-room-card="${CSS.escape(id)}"]`);
+    if (!card) return;
+    card.scrollIntoView({ block: "center", behavior: "smooth" });
+    card.classList.remove("flash");
+    void card.offsetWidth; // restart the animation
+    card.classList.add("flash");
+    card.querySelector("input")?.focus({ preventScroll: true });
   }
 
   rebuild();
-  return { rebuild };
+  return { rebuild, focusRoom };
 }
