@@ -19,6 +19,17 @@ npm test           # unit tests (node's built-in test runner)
 
 Requires Node 20 or newer.
 
+## Live site (GitHub Pages)
+
+Every push to `main` runs the tests, builds the app and publishes it with the workflow in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+
+https://makikaka.github.io/floor-plan-design/
+
+One-time setup: in the GitHub repo open **Settings → Pages** and set **Source** to **GitHub Actions**.
+On GitHub's free plan Pages only works for **public** repositories.
+
+Plans you edit in the browser are stored in that browser only. Use **Save plan to file** to keep a copy.
+
 ## Editing the plan
 
 Everything is edited in the page, no code or JSON needed. The drawing and the m² table update as you type, and your changes are kept in the browser.
