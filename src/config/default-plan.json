@@ -1,0 +1,27 @@
+{
+  "title": "Apartment",
+  "wall": 10,
+  "rooms": [
+    { "id": "bedroom", "name": "Bedroom", "x": 0, "y": 0, "w": 402, "h": 335, "note": "Windows on north wall; widened 390 to 402 to line up the right wall" },
+    { "id": "hallway", "name": "Hallway", "x": 0, "y": 345, "w": 170, "h": 380, "note": "Main entrance on west wall" },
+    { "id": "wc", "name": "WC", "x": 180, "y": 345, "w": 222, "h": 170, "note": "check: sketch shows 170 / 180; width adjusted to line up the right wall" },
+    { "id": "kitchen", "name": "Kitchen", "x": 180, "y": 525, "w": 222, "h": 200, "note": "width adjusted to line up the right wall" },
+    { "id": "dining", "group": "Dining + living room", "name": "Dining part", "x": -140, "y": 735, "w": 310, "h": 515, "note": "check sketch 223 / 310 / 515" },
+    { "id": "living", "group": "Dining + living room", "name": "Living part", "x": 180, "y": 735, "w": 222, "h": 380, "note": "check: sketch shows 222 and 380" },
+    { "id": "terrace", "name": "Terrace", "x": 180, "y": 1125, "w": 222, "h": 198, "outdoor": true, "note": "check: sketch shows 237, 198, 260; width adjusted to line up the right wall" }
+  ],
+  "doors": [
+    { "room": "hallway", "wall": "W", "offset": 140, "width": 100, "swing": "out", "hinge": "start", "label": "Entrance" },
+    { "room": "bedroom", "wall": "S", "offset": 40, "width": 90, "swing": "in", "hinge": "start" },
+    { "room": "hallway", "wall": "E", "offset": 20, "width": 70, "swing": "out", "hinge": "end", "label": "WC" },
+    { "room": "hallway", "wall": "E", "offset": 200, "width": 80, "swing": "out", "hinge": "start", "label": "Kitchen" },
+    { "room": "hallway", "wall": "S", "offset": 35, "width": 100, "swing": "none", "hinge": "start", "label": "1 m" },
+    { "room": "kitchen", "wall": "S", "offset": 60, "width": 80, "swing": "none", "hinge": "start" },
+    { "room": "dining", "wall": "E", "offset": 0, "width": 393, "swing": "none", "hinge": "start" },
+    { "room": "dining", "wall": "E", "offset": 405, "width": 90, "swing": "in", "hinge": "end", "label": "Balcony" }
+  ],
+  "windows": [
+    { "room": "bedroom", "wall": "N", "offset": 70, "width": 250 },
+    { "room": "dining", "wall": "S", "offset": 20, "width": 270 }
+  ]
+}

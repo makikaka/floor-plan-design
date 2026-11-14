@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Floor plan</title>
+</head>
+<body>
+  <header>
+    <h1>Floor plan</h1>
+    <span class="muted">All dimensions in cm &middot; areas in m&sup2; &middot; interior (clear) sizes</span>
+    <button id="print" type="button">Print / PDF</button>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Plan (to scale)</h2>
+      <svg id="plan" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Floor plan"></svg>
+      <div class="legend">
+        <span><i style="background:#fff"></i>Room</span>
+        <span><i style="background:#e6f2e1"></i>Terrace / outdoor</span>
+        <span><i style="background:#8fd0f5"></i>Window</span>
+        <span><i style="background:#fff;border-style:dashed"></i>Door + swing arc</span>
+      </div>
+      <div id="warn" class="warn" hidden></div>
+    </section>
+
+    <div class="stack">
+      <section class="card">
+        <h2>Areas</h2>
+        <table id="areas"></table>
+      </section>
+
+      <section class="card editor">
+        <h2>Edit dimensions, doors and windows</h2>
+        <textarea id="cfg" spellcheck="false" aria-label="Plan configuration (JSON)"></textarea>
+        <div class="row">
+          <button id="copy" type="button">Copy JSON</button>
+          <button id="reset" type="button">Reset to defaults</button>
+          <span id="status"></span>
+        </div>
+        <p class="muted small">
+          The plan redraws as you type and is auto-saved in this browser.
+          To make your edits permanent, click <b>Copy JSON</b> and paste it into
+          <code>src/config/default-plan.json</code>.
+        </p>
+        <details>
+          <summary>How the config works</summary>
+          <ul>
+            <li><b>wall</b>: thickness between rooms (cm). Gaps between rooms are drawn as wall.</li>
+            <li><b>rooms</b>: <code>x, y</code> = top-left interior corner, <code>w</code> = width (left&ndash;right),
+                <code>h</code> = depth (top&ndash;bottom). Move a room by changing x/y. Set <code>"outdoor": true</code> for terraces.
+                Give several rooms the same <code>"group"</code> text to make them one room (e.g. an L-shape); their areas are added together.
+                An opening with <code>"swing": "none"</code> removes part of the wall between them &ndash; the rest stays as a short wall.</li>
+            <li><b>doors</b>: <code>room</code> = id of the room it belongs to, <code>wall</code> = N / E / S / W,
+                <code>offset</code> = distance from the wall's start (N/S walls: from the left corner; E/W walls: from the top corner) to the start of the opening,
+                <code>width</code> = opening width, <code>swing</code> = "in" (opens into that room), "out" (opens away from it) or "none" (open passage),
+                <code>hinge</code> = "start" or "end" (which end of the opening the hinges are on).</li>
+            <li><b>windows</b>: same as doors but without swing/hinge.</li>
+            <li>N is the top of the drawing, E right, S bottom, W left.</li>
+          </ul>
+        </details>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
