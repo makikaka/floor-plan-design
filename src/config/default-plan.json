@@ -11,10 +11,10 @@
     { "id": "terrace", "name": "Terrace", "x": 180, "y": 1125, "w": 222, "h": 198, "outdoor": true, "note": "check: sketch shows 237, 198, 260; width adjusted to line up the right wall" }
   ],
   "doors": [
-    { "room": "hallway", "wall": "W", "offset": 140, "width": 100, "swing": "out", "hinge": "start", "label": "Entrance" },
-    { "room": "bedroom", "wall": "S", "offset": 40, "width": 90, "swing": "in", "hinge": "start" },
-    { "room": "hallway", "wall": "E", "offset": 20, "width": 70, "swing": "out", "hinge": "end", "label": "WC" },
-    { "room": "hallway", "wall": "E", "offset": 200, "width": 80, "swing": "out", "hinge": "start", "label": "Kitchen" },
+    { "room": "hallway", "wall": "W", "offset": 270, "width": 100, "swing": "out", "hinge": "start", "label": "Entrance" },
+    { "room": "bedroom", "wall": "S", "offset": 70, "width": 90, "swing": "in", "hinge": "start" },
+    { "room": "hallway", "wall": "E", "offset": 90, "width": 70, "swing": "out", "hinge": "end", "label": "WC" },
+    { "room": "hallway", "wall": "E", "offset": 290, "width": 80, "swing": "out", "hinge": "start", "label": "Kitchen" },
     { "room": "hallway", "wall": "S", "offset": 35, "width": 100, "swing": "none", "hinge": "start", "label": "1 m" },
     { "room": "kitchen", "wall": "S", "offset": 60, "width": 80, "swing": "none", "hinge": "start" },
     { "room": "dining", "wall": "E", "offset": 0, "width": 393, "swing": "none", "hinge": "start" },
